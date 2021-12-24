@@ -1,0 +1,40 @@
+#Selecionar uma mensagem para ser apagada,
+#ir buscar o owner da msg
+#ir buscar a pass do owner ao userdata
+#dar login 
+#apagar a msg
+#
+
+
+config:
+  target: 'https://scc2122appwesteurope54939.azurewebsites.net/rest'
+  http:
+    timeout: 10
+  plugins:
+    metrics-by-endpoint: {}
+  processor: "./test-utils.js"
+  variables:
+     metricsProcessEndpoint : "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+  - name: "Delete messages"    # Delete messages
+    arrivalCount: 1        
+    duration: 1
+
+scenarios:
+  - name: 'Delete message'
+    weight: 1
+    flow:
+      - loop:
+        - function: "selectMessageSkewed"
+        - function: "getUserPassword"
+        - post:                          
+            url: "/users/auth"
+            headers:
+              Content-Type: application/json
+            json:
+              id: "{{ user }}"
+              pwd: "{{ pwd }}"
+        - delete:
+            url: "/messages/{{ id }}"
+            afterResponse: "deleteMessageReply"
+        count: 100

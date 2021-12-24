@@ -1,0 +1,36 @@
+#1- ir buscar o user
+#2-autenticar com esse user
+#3- apagar-se
+#
+config:
+  target: 'https://scc2122appwesteurope54939.azurewebsites.net/rest'
+#  target: 'http://localhost:8080/scc2122-backend/rest'
+  http:
+    timeout: 10
+  plugins:
+    metrics-by-endpoint: {}
+  processor: "./test-utils.js"
+  variables:
+     metricsProcessEndpoint : "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+  - name: "Delete users"    # delete users
+    duration: 1
+    arrivalCount: 1
+
+scenarios:
+  - name: 'Delete users'
+    weight: 1
+    flow:
+      - loop:                            
+        - function: "selectUserSkewed"
+        - post:                          
+            url: "/users/auth"
+            headers:
+              Content-Type: application/json
+            json:
+              id: "{{ user }}"
+              pwd: "{{ pwd }}"
+        - delete:                          
+            url: "/users/{{ user }}"
+            afterResponse: "deleteUserReply"          
+        count: 50

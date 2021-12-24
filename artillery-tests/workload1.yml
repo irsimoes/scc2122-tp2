@@ -1,0 +1,110 @@
+
+config:
+  target: 'https://scc2122appwesteurope54939.azurewebsites.net/rest'
+#  target: 'http://localhost:8080/scc2122-backend/rest'
+  http:
+    timeout: 10
+  plugins:
+    metrics-by-endpoint: {}
+  processor: "./test-utils.js"
+  variables:
+     metricsProcessEndpoint : "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+  - name: "Warm up"
+    arrivalRate: 1         
+    duration: 10
+  - name: "Test"
+    arrivalRate: 3         
+    duration: 60
+
+scenarios:
+  - name: 'Passive reader'
+    weight: 10
+    flow:
+      - function: "selectUserSkewed"
+      - post:                          # First: login as a user
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ user }}"
+            pwd: "{{ pwd }}"
+      - loop:
+        - get:                          # Get user channels
+            url: "/users/{{ user }}/channels/list"
+            headers:
+              Accept: application/json
+            capture: 
+              json: "$"
+              as: "channelLst"
+        - function: "selectChannelFromChannelLstSkewed"   # Select channel to read messages
+        - get:     
+            url: "/channels/{{ channelId }}/messages?st=0&len=50"
+            headers:
+              Accept: application/json
+            capture: 
+              json: "$"
+              as: "msgList"
+            ifTrue: "channelId"
+        - function: "selectImagesIdFromMsgList"   # Select imageIds from MsgList
+        - loop:                                   # load images
+            - get:
+                url: "/media/{{ $loopElement }}"
+                headers: 
+                  Accept: application/octet-stream
+          over: "imageIdLst"
+        whileTrue: "random50"
+
+  - name: 'Troll'
+    weight: 1
+    flow:
+      - function: "selectUserSkewed"
+      - post:                          # First: login as a user
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ user }}"
+            pwd: "{{ pwd }}"
+      - loop:
+        - get:                          # Get user channels
+            url: "/users/{{ user }}/channels/list"
+            headers:
+              Accept: application/json
+            capture: 
+              json: "$"
+              as: "channelLst"
+        - function: "selectChannelFromChannelLstSkewed"   # Select channel to read messages
+        - get:               
+            url: "/channels/{{ channelId }}/messages?st=0&len=2"
+            headers:
+              Accept: application/json
+            capture: 
+              json: "$"
+              as: "msgList"
+            ifTrue: "channelId"
+        - loop:                                 # Post a reply to the most recent messages
+          - function: "genNewMessage"           # Generate message information
+          - post:                          # Post image if ....
+              url: "/media"
+              headers:
+                Content-Type: application/octet-stream
+                Accept: application/json
+              beforeRequest: "uploadImageBody"
+              capture: 
+                regexp: "(.+)"
+                as: "imageId"              # capture the reply as image id to be used in user creation
+              ifTrue: "hasImage"   # post has image and there is a channel
+          - post:                          # Post message
+              url: "/messages"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:                         # NOTE: it is not necessary to send all fields
+                channel: "{{ $loopElement.channel }}"
+                replyTo: "{{ $loopElement.id }}"
+                user: "{{ user }}"
+                text: "{{ msgText }}"
+                imageId: "{{ imageId }}"
+          over: "msgList"
+        whileTrue: "random50"

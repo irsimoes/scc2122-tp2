@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "artillery": "^2.0.0-5",
+    "artillery-plugin-metrics-by-endpoint": "github:preguica/artillery-plugin-metrics-by-endpoint",
+    "faker": "^5.5.3",
+    "node-fetch": "^3.1.0"
+  }
+}

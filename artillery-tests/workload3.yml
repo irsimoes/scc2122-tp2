@@ -1,0 +1,298 @@
+# criar 3 users
+# cria canal com os amigos
+# e eles trocam msgs
+# chateia se com eles 
+# apaga o canal e entao as mensagens sao apagadas tambem
+
+#outro cenario
+# um user, triste por  n ter amigos, decide procurar novos servers publicos
+# como tem vergonha de entrar com o seu proprio nome, decide dar update e trocar de nome
+# procura nos trending o mais trending
+# e entra nele
+# le as ultimas mensagens e responde a que mais lhe agradou
+#
+# troca de nome antes
+
+config:
+  target: "https://scc2122appwesteurope54939.azurewebsites.net/rest"
+  #  target: 'http://localhost:8080/scc2122-backend/rest'
+  http:
+    timeout: 10
+  plugins:
+    metrics-by-endpoint: {}
+  processor: "./test-utils.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint" # function used to aggregate endpoints for statistics
+  phases:
+    - name: "Warm up"
+      arrivalRate: 1
+      duration: 10
+    - name: "Test"
+      arrivalRate: 3
+      duration: 60
+
+scenarios:
+  - name: "Angry friend" 
+    weight: 0     #60% chance of executing
+    flow:
+      - function: "genNewUser" #vamos criar 3 users
+      - post: # o user 1
+          url: "/users"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+          capture:
+            - json: "$.id"
+              as: id1
+            - json: "$.pwd"
+              as: pass1
+      - function: "genNewUser"
+      - post: #o user 2
+          url: "/users"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+          capture:
+            - json: "$.id"
+              as: id2
+            - json: "$.pwd"
+              as: pass2
+      - function: "genNewUser"
+      - post: #o user 3
+          url: "/users"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+          capture:
+            - json: "$.id"
+              as: id3
+            - json: "$.pwd"
+              as: pass3        
+      - post: #damos login com o user1 para criar um canal
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id1 }}"
+            pwd: "{{ pass1 }}"
+      - function: "genNewChannel"
+      - post: #criamos um canal privado para os amigos
+          url: "/channels"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            name: "{{ channelName }}"
+            owner: "{{ id1 }}"
+            publicChannel: false
+            members: ["{{ id1 }}"]
+          capture:
+            - json: $.id
+              as: channelId
+      - put: #o user1 adiciona o amigo user2 ao canal
+          url: "/channels/{{ channelId }}/add/{{ id2 }}" 
+      - put: #o user1 adiciona o amigo user3 ao canal
+          url: "/channels/{{ channelId }}/add/{{ id3 }}"
+          #aqui
+      - function: "genNewMessage"
+      - post: #post msg user 3
+          url: "/messages"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            channel: "{{ channelId }}"
+            user: "{{ id1 }}"
+            text: "{{ msgText }}"
+          capture:
+            - regexp: "(.+)"
+              as: "lastMsgId"
+      - loop: #comeca uma conversa no grupo
+          - post: #login do user2
+              url: "/users/auth"
+              headers:
+                Content-Type: application/json
+              json:
+                id: "{{ id2 }}"
+                pwd: "{{ pass2 }}"
+          - get:
+              url: "/messages/{{ lastMsgId }}"
+          - function: "genNewMessage"
+          - post: #post msg do user 2
+              url: "/messages"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                channel: "{{ channelId }}"
+                user: "{{ id2 }}"
+                text: "{{ msgText }}"
+              capture:
+                - regexp: "(.+)"
+                  as: "lastMsgId"
+          - post: #login user1
+              url: "/users/auth"
+              headers:
+                Content-Type: application/json
+              json:
+                id: "{{ id1 }}"
+                pwd: "{{ pass1 }}"
+          - get:
+              url: "/messages/{{ lastMsgId }}"
+          - function: "genNewMessage"
+          - post: #post msg user 1
+              url: "/messages"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                channel: "{{ channelId }}"
+                user: "{{ id1 }}"
+                text: "{{ msgText }}"
+              capture:
+                - regexp: "(.+)"
+                  as: "lastMsgId"
+          - post: #login user 3
+              url: "/users/auth"
+              headers:
+                Content-Type: application/json
+              json:
+                id: "{{ id3 }}"
+                pwd: "{{ pass3 }}"
+          - get:
+              url: "/messages/{{ lastMsgId }}"
+          - function: "genNewMessage"
+          - post: #post msg user 3
+              url: "/messages"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                channel: "{{ channelId }}"
+                user: "{{ id3 }}"
+                text: "{{ msgText }}"
+              capture:
+                - regexp: "(.+)"
+                  as: "lastMsgId"
+        whileTrue: "random70"
+      - post: #login user1
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id1 }}"
+            pwd: "{{ pass1 }}"
+      - delete:
+          url: "/channels/{{ channelId }}"
+
+
+
+  - name: 'Sad User'
+    weight: 4                          #this scenario executes with a 40% probability
+    flow:
+      - function: "genNewUser" 
+      - post: # o user 1
+          url: "/users"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+          capture:
+            - json: "$.id"
+              as: id
+            - json: "$.pwd"
+              as: pass
+      - get:                          # Get user channels
+          url: "/channels/trending"
+          headers:
+            Accept: application/json
+          capture: 
+            json: "$"
+            as: "channelLst"
+      - function: "selectChannelFromChannelLstSkewed"   # Select channel to read messages
+      - post: #login do user
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id }}"
+            pwd: "{{ pass }}"
+      - put: # update do nome
+          url: "/users/{{ id }}"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id }}"
+            name: "Joaozinho"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+      - put: #damos subscribe do user no canal
+          url: "/channels/{{ channelId }}/subscribe/{{ id }}"
+      - get:                       
+          url: "/channels/{{ channelId }}/messages?st=0&len=50"
+          headers:
+            Accept: application/json
+          capture: 
+            json: "$"
+            as: "msgList"
+          ifTrue: "channelId"
+      - function: "genNewMessage"
+      - post:                          # Post message
+          url: "/messages"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:                         
+            channel: "{{ channelId }}"
+            user: "{{ id }}"
+            text: "Hello, nice to meet you"
+      - loop:                                 # Post a reply to the most recent messages
+        - function: "selectMessageFromMessageLst"
+        - function: "genNewMessage"           # Generate message information
+        - post:                          # Post image if ....
+            url: "/media"
+            headers:
+              Content-Type: application/octet-stream
+              Accept: application/json
+            beforeRequest: "uploadImageBody"
+            capture: 
+              regexp: "(.+)"
+              as: "imageId"              # capture the reply as image id to be used in user creation
+            ifTrue: "hasImage"   # post has image and there is a channel
+        - post:                          # Post message
+            url: "/messages"
+            headers:
+              Content-Type: application/json
+              Accept: application/json
+            json:                         
+              channel: "{{ channelId }}"
+              user: "{{ id }}"
+              text: "{{ msgText }}"
+              replyTo: "{{ msgId }}"
+              imageId: "{{ imageId }}"
+            ifTrue: "msgId"
+        whileTrue: "random50"

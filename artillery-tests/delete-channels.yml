@@ -1,0 +1,39 @@
+#ir buscar o canal
+#guardar o channel.id
+#guardar o owner.id
+#ir buscar a password ao users.data
+#dar login sendo o dono
+#dar delete do canal
+
+
+config:
+  target: 'https://scc2122appwesteurope54939.azurewebsites.net/rest'
+  http:
+    timeout: 10
+  plugins:
+    metrics-by-endpoint: {}
+  processor: "./test-utils.js"
+  variables:
+     metricsProcessEndpoint : "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+  - name: "Delete channels"    # Create channels
+    duration: 1
+    arrivalCount: 1
+
+scenarios:
+  - name: 'Delete channels'
+    weight: 1 
+    flow:
+      - loop:                            # let's delete 10 channels - loop ... count
+        - function: "selectChannelSkewed"
+        - post:                          
+            url: "/users/auth"
+            headers:
+              Content-Type: application/json
+            json:
+              id: "{{ user }}"
+              pwd: "{{ pwd }}"
+        - delete:                          # Delete channel
+            url: "/channels/{{ channel }}"
+            afterResponse: "deleteChannelReply"
+        count: 10

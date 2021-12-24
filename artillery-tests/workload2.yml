@@ -1,0 +1,169 @@
+#criar 2 users capturar os ids deles como vars de ambiente
+#criar canal
+#subscrevem se os 2 no canal
+#1 user posta mensagem no canal
+#comecamos loop com probabilidades de resposta dos dois de 70%
+#user2 -> da reply ao user 1
+## para dar reply temos de apanhar a ultima mensagem e dps dar o reply
+#user 1 -> reply ao user2 again com a ultima
+#fim do loop
+
+config:
+  target: "https://scc2122appwesteurope54939.azurewebsites.net/rest"
+  #  target: 'http://localhost:8080/scc2122-backend/rest'
+  http:
+    timeout: 10
+  plugins:
+    metrics-by-endpoint: {}
+  processor: "./test-utils.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint" # function used to aggregate endpoints for statistics
+  phases:
+    - name: "Warm up"
+      arrivalRate: 1
+      duration: 10
+    - name: "Test"
+      arrivalRate: 3
+      duration: 60
+
+scenarios:
+  - name: "Chat" #In this scenario we create two users, one of them creates a channel and the other one subscribes to the channel, the first sends a message and then they start a conversation
+    weight: 10
+    flow:
+      - function: "genNewUser" #vamos criar 2 users
+      - post: # o user 1
+          url: "/users"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+          capture:
+            - json: "$.id"
+              as: id1
+            - json: "$.pwd"
+              as: pass1
+      - function: "genNewUser"
+      - post: #o user 2
+          url: "/users"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            pwd: "{{ pwd }}"
+            photoId: null
+            channelIds: []
+          capture:
+            - json: "$.id"
+              as: id2
+            - json: "$.pwd"
+              as: pass2
+      - post: #damos login com o user1 para criar um canal
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id1 }}"
+            pwd: "{{ pass1 }}"
+      - function: "genNewChannel"
+      - post: #criamos um canal
+          url: "/channels"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            name: "{{ channelName }}"
+            owner: "{{ id1 }}"
+            publicChannel: true
+            members: ["{{ id1 }}"]
+          capture:
+            - json: $.id
+              as: channelId
+      - post: #damos login como user2 para podermos subscrever
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id2 }}"
+            pwd: "{{ pass2 }}"
+      - put: #damos subscribe do user2 no canal
+          url: "/channels/{{ channelId }}/subscribe/{{ id2 }}"
+      - post: #damos login como user 1 para criar uma msg
+          url: "/users/auth"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ id1 }}"
+            pwd: "{{ pass1 }}"
+      - function: "genNewMessage"
+      - post: #criamos a msg
+          url: "/messages"
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          json:
+            channel: "{{ channelId }}"
+            user: "{{ id1 }}"
+            text: "{{ msgText }}"
+            imageId: null
+          capture:
+            - regexp: "(.+)"
+              as: "lastMsgId" #capturamos o msg id para dps pudermos responder
+      - loop: #comeca o loop da conversa, neste loop existe 70% de probabilidade de haver reply
+          - post: #login do user2
+              url: "/users/auth"
+              headers:
+                Content-Type: application/json
+              json:
+                id: "{{ id2 }}"
+                pwd: "{{ pass2 }}"
+          - function: "genNewMessage"
+          - get:
+              url: "/messages/{{ lastMsgId }}"
+          - post: #reply do user 2 a mensagem do user 1
+              url: "/messages"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                channel: "{{ channelId }}"
+                user: "{{ id2 }}"
+                text: "{{ msgText }}"
+                replyTo: "{{ lastMsgId }}"
+                imageId: null
+              capture:
+                - regexp: "(.+)"
+                  as: "lastMsgId" #capturar o id da msg para depois ser respondida
+          - post:
+              url: "/users/auth"
+              headers:
+                Content-Type: application/json
+              json:
+                id: "{{ id1 }}"
+                pwd: "{{ pass1 }}"
+          - get:
+              url: "/messages/{{ lastMsgId }}"
+          - function: "genNewMessage"
+          - post:
+              url: "/messages"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                channel: "{{ channelId }}"
+                user: "{{ id1 }}"
+                text: "{{ msgText }}"
+                replyTo: "{{ lastMsgId }}"
+                imageId: null
+              capture:
+                - regexp: "(.+)"
+                  as: "lastMsgId"
+        whileTrue: "random80"
+
+
