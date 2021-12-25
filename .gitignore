@@ -4,3 +4,6 @@ trab-v2/target
 .factorypath
 .project
 .settings
+kubernetes/database/mongo-secret.yaml
+
+kubernetes/webapp/mongo-secret.yaml

@@ -1,21 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: azure-vote-back
+  name: redis
+  namespace: cache
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: azure-vote-back
+      app: redis
   template:
     metadata:
       labels:
-        app: azure-vote-back
+        app: redis
     spec:
       nodeSelector:
         "beta.kubernetes.io/os": linux
       containers:
-      - name: azure-vote-back
+      - name: redis
         image: mcr.microsoft.com/oss/bitnami/redis:6.0.8
         env:
         - name: ALLOW_EMPTY_PASSWORD
@@ -34,7 +35,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: azure-vote-back
+  name: redis-service
+  namespace: cache
+
 spec:
   type: LoadBalancer #apagar isto
   ports:
@@ -42,4 +45,4 @@ spec:
     targetPort: 6379
     nodePort: 31380 #apagar isto
   selector:
-    app: azure-vote-back
+    app: redis

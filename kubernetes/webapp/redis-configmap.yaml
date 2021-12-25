@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-configmap
+  namespace: webapp
+data:
+  redis_host: redis-service.cache.svc.cluster.local
+  redis_port: "6379"
