@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        image: irsimoes/scc2122-app
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: "/mnt/vol"
+          name: mediavolume
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mongodb-configmap
+              key: database_url
+        - name: REDIS_HOSTNAME
+          value: "192.168.39.6"
+        - name: REDIS_PORT
+          value: "31380"
+          # valueFrom:
+          #   configMapKeyRef:
+          #     name: redis-configmap
+          #     key: redis_url
+      volumes: 
+        - name: mediavolume
+          persistentVolumeClaim:
+            claimName: azure-managed-disk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  selector:
+    app: webapp
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30356
