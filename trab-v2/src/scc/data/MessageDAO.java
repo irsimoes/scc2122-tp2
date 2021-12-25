@@ -1,10 +1,8 @@
 package scc.data;
 
-import org.bson.types.ObjectId;
 
 public class MessageDAO {
-    private ObjectId _id; //record id
-	private long _ts; //timestamp
+	private long ts; //timestamp
     private String id;
 	private String replyTo;
     private String channel;
@@ -29,20 +27,12 @@ public class MessageDAO {
 		this(m.getId(), m.getReplyTo(), m.getChannel(), m.getUser(), m.getText(), m.getImageId());
 	}
 
-    public ObjectId get_id() {
-		return _id;
+	public long getTs() {
+		return ts;
 	}
 
-	public void set_id(ObjectId _id) {
-		this._id = _id;
-	}
-
-	public long get_ts() {
-		return _ts;
-	}
-
-	public void set_ts(long _ts) {
-		this._ts = _ts;
+	public void setTs(long ts) {
+		this.ts = ts;
 	}
 
     public String getId() {
@@ -95,7 +85,7 @@ public class MessageDAO {
 
     @Override
 	public String toString() {
-		return "MessageDAO [_id=" + _id + ", _ts=" + _ts + ",id=" + id + ", replyTo=" + replyTo + ", channel=" + channel + ", user=" + user + ", text="
+		return "MessageDAO [ts=" + ts + ",id=" + id + ", replyTo=" + replyTo + ", channel=" + channel + ", user=" + user + ", text="
 				+ text +  ", imageId=" + imageId + "]";
 	}
 	

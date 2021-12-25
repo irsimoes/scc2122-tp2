@@ -1,18 +1,16 @@
 package scc.data;
 
-import org.bson.types.ObjectId;
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a User, as stored in the database
  */
 public class UserDAO {
-	private ObjectId _id; //record id
 	private String id;
 	private String name;
 	private String pwd;
 	private String photoId;
-	private String[] channelIds;
+	private List<String> channelIds;
 
 	public UserDAO() {
 	}
@@ -21,19 +19,13 @@ public class UserDAO {
 		this(u.getId(), u.getName(), u.getPwd(), u.getPhotoId(), u.getChannelIds());
 	}
 
-	public UserDAO(String id, String name, String pwd, String photoId, String[] channelIds) {
+	public UserDAO(String id, String name, String pwd, String photoId, List<String> channelIds) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.pwd = pwd;
 		this.photoId = photoId;
 		this.channelIds = channelIds;
-	}
-	public ObjectId get_id() {
-		return _id;
-	}
-	public void set_id(ObjectId _id) {
-		this._id = _id;
 	}
 	public String getId() {
 		return id;
@@ -59,19 +51,19 @@ public class UserDAO {
 	public void setPhotoId(String photoId) {
 		this.photoId = photoId;
 	}
-	public String[] getChannelIds() {
-		return channelIds == null ? new String[0] : channelIds ;
+	public List<String> getChannelIds() {
+		return channelIds;
 	}
-	public void setChannelIds(String[] channelIds) {
+	public void setChannelIds(List<String> channelIds) {
 		this.channelIds = channelIds;
 	}
 	public User toUser() {
-		return new User( id, name, pwd, photoId, channelIds == null ? null : Arrays.copyOf(channelIds,channelIds.length));
+		return new User( id, name, pwd, photoId, channelIds);
 	}
 	@Override
 	public String toString() {
-		return "UserDAO [_id=" + _id + ", id=" + id + ", name=" + name + ", pwd=" + pwd
-				+ ", photoId=" + photoId + ", channelIds=" + Arrays.toString(channelIds) + "]";
+		return "UserDAO [ id=" + id + ", name=" + name + ", pwd=" + pwd
+				+ ", photoId=" + photoId + ", channelIds=" + channelIds.toString() + "]";
 	}
 
 }

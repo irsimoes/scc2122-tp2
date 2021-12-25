@@ -7,7 +7,6 @@ import javax.ws.rs.core.Response.Status;
 import com.mongodb.MongoException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -45,15 +44,15 @@ public class ChannelResources {
 
         auth.checkCookie(session, owner);
        
-        if (channel.getName() == null || owner == null || channel.getMembers().length != 1 || 
-            !channel.getMembers()[0].equals(owner) || data.get(channel.getOwner(), User.class, UserDAO.class, false) == null)
+        if (channel.getName() == null || owner == null || channel.getMembers().size() != 1 || 
+            !channel.getMembers().get(0).equals(owner) || data.get(channel.getOwner(), User.class, UserDAO.class, false) == null)
             throw new WebApplicationException(Status.BAD_REQUEST);
             
         try {
             data.put(channel.getId(), channel, new ChannelDAO(channel), Channel.class, ChannelDAO.class, false);
             data.patchAdd(owner, User.class, UserDAO.class, "channelIds", id);
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
         return channel;
     }
@@ -77,7 +76,7 @@ public class ChannelResources {
             data.delete(id, id, Channel.class, ChannelDAO.class, false);
             data.put(id, channel, new ChannelDAO(channel), Channel.class, ChannelDAO.class, true);
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
     }
 
@@ -95,7 +94,7 @@ public class ChannelResources {
 
         if (preChannel == null || channel.getId() == null || channel.getName() == null || channel.getOwner() == null
                 || !channel.getId().equals(preChannel.getId()) || !channel.getOwner().equals(preChannel.getOwner())
-                || !Arrays.equals(channel.getMembers(), preChannel.getMembers())) {
+                || !channel.getMembers().equals(preChannel.getMembers())) {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
@@ -105,7 +104,7 @@ public class ChannelResources {
             data.delete(id, id, Channel.class, ChannelDAO.class, false);
             data.put(id, channel, new ChannelDAO(channel), Channel.class, ChannelDAO.class, false);
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
     }
 
@@ -128,7 +127,7 @@ public class ChannelResources {
         if(!channel.isPublicChannel()) {
             String userId = auth.getSession(session);
 
-            if (userId == null || !Arrays.asList(channel.getMembers()).contains(userId))
+            if (userId == null || !channel.getMembers().contains(userId))
                 throw new WebApplicationException(Status.UNAUTHORIZED);
         }
 
@@ -146,6 +145,10 @@ public class ChannelResources {
     @Produces(MediaType.APPLICATION_JSON)
     public List<Message> getChannelMessages(@CookieParam("scc:session") Cookie session, @PathParam("id") String id, @QueryParam("st") Integer st, @QueryParam("len") Integer len) {
 
+        if(st == null || len == null) {
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
+        
         Channel channel = data.get(id, Channel.class, ChannelDAO.class, false);
         if(channel == null) {
             throw new WebApplicationException(Status.NOT_FOUND);
@@ -153,7 +156,7 @@ public class ChannelResources {
 
         String userId = auth.getSession(session);
 
-        if (userId == null || !Arrays.asList(channel.getMembers()).contains(userId))
+        if (userId == null || !channel.getMembers().contains(userId))
             throw new WebApplicationException(Status.UNAUTHORIZED);
     
         List<MessageDAO> messages = data.getMessagesFromChannel(id, st, len);
@@ -261,7 +264,7 @@ public class ChannelResources {
         String channelId = channel.getId();
         String userId = user.getId();
 
-        if (Arrays.asList(channel.getMembers()).contains(userId)) 
+        if (channel.getMembers().contains(userId)) 
             return; // return so the user thinks that he was added even though he was already there
 
         try{
@@ -276,10 +279,8 @@ public class ChannelResources {
     private void memberRemoval(Channel channel, User user) {
         String userId = user.getId();
         String channelId = channel.getId();
-
-        List<String> membersList = Arrays.asList(channel.getMembers());
         
-        if (!membersList.contains(userId) || channel.getOwner().equals(userId)) {
+        if (!channel.getMembers().contains(userId) || channel.getOwner().equals(userId)) {
             return;
         }
 

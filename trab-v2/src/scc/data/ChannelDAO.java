@@ -1,14 +1,13 @@
 package scc.data;
 
-import org.bson.types.ObjectId;
+import java.util.List;
 
 public class ChannelDAO {
-    private ObjectId _id; // record id
     private String id;
     private String name;
     private String owner;
     private boolean publicChannel;
-    private String[] members;
+    private List<String> members;
 
     public ChannelDAO() {
     }
@@ -17,21 +16,13 @@ public class ChannelDAO {
         this(c.getId(), c.getName(), c.getOwner(), c.isPublicChannel(), c.getMembers());
     }
 
-    public ChannelDAO(String id, String name, String owner, boolean publicChannel, String[] members) {
+    public ChannelDAO(String id, String name, String owner, boolean publicChannel, List<String> members) {
         super();
         this.id = id;
         this.name = name;
         this.owner = owner;
         this.publicChannel = publicChannel;
         this.members = members;
-    }
-
-    public ObjectId get_id() {
-        return this._id;
-    }
-
-    public void set_id(ObjectId _id) {
-        this._id = _id;
     }
 
     public String getId() {
@@ -66,17 +57,17 @@ public class ChannelDAO {
         this.publicChannel = publicChannel;
     }
 
-    public String[] getMembers() {
+    public List<String> getMembers() {
         return this.members;
     }
 
-    public void setMembers(String[] members) {
+    public void setMembers(List<String> members) {
         this.members = members;
     }
 
     @Override
 	public String toString() {
-		return "ChannelDAO [_id=" + _id + "id=" + id + ", name=" + name + ", owner=" 
+		return "ChannelDAO [id=" + id + ", name=" + name + ", owner=" 
             + owner + ", publicChannel=" + publicChannel + ", members=" + members + "]";
 	}
 }

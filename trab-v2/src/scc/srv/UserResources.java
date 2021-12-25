@@ -40,7 +40,7 @@ public class UserResources {
 
         String id = user.getId();
         if (id == null || (user.getPhotoId() != null && !blob.blobExists(user.getPhotoId()))
-                || (user.getChannelIds().length != 0))
+                || (user.getChannelIds().size() != 0))
             throw new WebApplicationException(Status.BAD_REQUEST);
 
         if (cacheActive) { // check if it's in cache so we know it was created
@@ -53,7 +53,7 @@ public class UserResources {
         try {
             data.put(id, user, new UserDAO(user), User.class, UserDAO.class, false);
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
 
         return user;
@@ -77,7 +77,7 @@ public class UserResources {
             auth.deleteCookie(session.getValue());
             data.put(id, u, new UserDAO(u), User.class, UserDAO.class, true);
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
     }
 
@@ -97,7 +97,7 @@ public class UserResources {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        if (!user.getId().equals(u.getId()) || !Arrays.equals(user.getChannelIds(), u.getChannelIds())) {
+        if (!user.getId().equals(u.getId()) || !user.getChannelIds().equals(u.getChannelIds())) {
             throw new WebApplicationException(Status.FORBIDDEN);
         }
 
@@ -106,7 +106,7 @@ public class UserResources {
             data.put(id, user, new UserDAO(user), User.class, UserDAO.class, false);
 
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
     }
 
@@ -121,14 +121,19 @@ public class UserResources {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public <T> T getUser(@CookieParam("scc:session") Cookie session, @PathParam("id") String id) {
+
+        if(session == null) {
+            throw new WebApplicationException(Status.FORBIDDEN);
+        }
        
         User user = data.get(id, User.class, UserDAO.class, false);
 
         if (user == null) {
             throw new WebApplicationException(Status.NOT_FOUND);
         }
-        if(session == null || !auth.getSession(session).equals(id))
+        if(!auth.getSession(session).equals(id))
             return (T) new UserProfile(user);
+        
         return (T) user;
     }
 
@@ -162,7 +167,7 @@ public class UserResources {
     @GET
     @Path("/{id}/channels/list")
     @Produces(MediaType.APPLICATION_JSON)
-    public <T> String[] listChannelsOfUser(@CookieParam("scc:session") Cookie session, @PathParam("id") String id) {
+    public <T> List<String> listChannelsOfUser(@CookieParam("scc:session") Cookie session, @PathParam("id") String id) {
 
         T u = getUser(session, id);
         if(u instanceof UserProfile) //if this returns a user profile then a user is trying to get the channels of another user

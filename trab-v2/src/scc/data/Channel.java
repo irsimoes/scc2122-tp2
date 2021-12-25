@@ -1,16 +1,18 @@
 package scc.data;
 
+import java.util.List;
+
 public class Channel {
     private String id;
     private String name;
     private String owner;
     private boolean publicChannel;
-    private String[] members;
+    private List<String> members;
 
     public Channel() {
 	}
 
-    public Channel(String id, String name, String owner, boolean publicChannel, String[] members) {
+    public Channel(String id, String name, String owner, boolean publicChannel, List<String> members) {
         super();
         this.id = id;
         this.name = name;
@@ -55,11 +57,11 @@ public class Channel {
         this.publicChannel = publicChannel;
     }
 
-    public String[] getMembers() {
+    public List<String> getMembers() {
         return this.members;
     }
 
-    public void setMembers(String[] members) {
+    public void setMembers(List<String> members) {
         this.members = members;
     }
 

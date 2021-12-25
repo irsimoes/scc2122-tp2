@@ -49,7 +49,7 @@ public class MessageResources {
         if (channel == null)
             throw new WebApplicationException(Status.BAD_REQUEST);
 
-        if (!Arrays.asList(channel.getMembers()).contains(user.getId()))
+        if (!channel.getMembers().contains(user.getId()))
             throw new WebApplicationException(Status.UNAUTHORIZED);
 
         Message replyTo = data.get(message.getReplyTo(), Message.class, MessageDAO.class, false);
@@ -67,10 +67,10 @@ public class MessageResources {
 
         try {
             MessageDAO messageDAO = new MessageDAO(message);
-            messageDAO.set_ts(System.currentTimeMillis());
+            messageDAO.setTs(System.currentTimeMillis());
             data.put(message.getId(), message, messageDAO, Message.class, MessageDAO.class, false);
         } catch (MongoException e) {
-            throw new WebApplicationException(e.getCode());
+            throw new WebApplicationException(e.getCode() != 11000 ? e.getCode() : 409);
         }
 
         if(channel.isPublicChannel()) //only the public channels can be trending
@@ -124,7 +124,7 @@ public class MessageResources {
         
         String userId = auth.getSession(session);
 
-        if (userId == null || !Arrays.asList(channel.getMembers()).contains(userId))
+        if (userId == null || !channel.getMembers().contains(userId))
             throw new WebApplicationException(Status.UNAUTHORIZED);
 
         return message;

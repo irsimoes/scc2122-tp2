@@ -1,6 +1,6 @@
 package scc.data;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a User, as returned to the clients
@@ -10,12 +10,12 @@ public class User {
 	private String name;
 	private String pwd;
 	private String photoId;
-	private String[] channelIds;
+	private List<String> channelIds;
 
 	public User() {
 	}
 
-	public User(String id, String name, String pwd, String photoId, String[] channelIds) {
+	public User(String id, String name, String pwd, String photoId, List<String> channelIds) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -57,16 +57,16 @@ public class User {
 	public void setPhotoId(String photoId) {
 		this.photoId = photoId;
 	}
-	public String[] getChannelIds() {
-		return channelIds == null ? new String[0] : channelIds ;
+	public List<String> getChannelIds() {
+		return channelIds ;
 	}
-	public void setChannelIds(String[] channelIds) {
+	public void setChannelIds(List<String> channelIds) {
 		this.channelIds = channelIds;
 	}
 	@Override
 	public String toString() {
 		return "User [id=" + id + ", name=" + name + ", pwd=" + pwd + ", photoId=" + photoId + ", channelIds="
-				+ Arrays.toString(channelIds) + "]";
+				+channelIds.toString() + "]";
 	}
 
 }

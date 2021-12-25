@@ -14,7 +14,6 @@ import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 
-//import com.google.gson.Gson;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -36,32 +35,34 @@ public class MongoDBLayer {
 	private static final String DELETED_CHANNELS_CONTAINER = "DeletedChannels";
 
 	private static MongoDBLayer instance;
-	private MongoDatabase database;
 	private MongoCollection currentCollection;
-
-	//private Gson gson;
+	private CodecRegistry pojoCodecRegistry;
 
 	public static synchronized MongoDBLayer getInstance() {
 		if (instance != null)
 			return instance;
 
-		CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
-		CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
+		CodecProvider pojoP = PojoCodecProvider.builder().automatic(true).build();
+		CodecRegistry pojoR = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoP));
 
+		instance = new MongoDBLayer(pojoR);
 
-		try (MongoClient mongoClient = MongoClients.create("mongodb://admin:pass@192.168.39.159:30040")){
-			MongoDatabase db = mongoClient.getDatabase("data").withCodecRegistry(pojoCodecRegistry);
-			instance = new MongoDBLayer(db);
-			return instance;
-		}
+		return instance;
 	}
 
-	public MongoDBLayer(MongoDatabase database) {
-		this.database = database;
-		//gson = new Gson();
+	public MongoDBLayer(CodecRegistry pojoCodecRegistry) {
+		// gson = new Gson();
+		this.pojoCodecRegistry = pojoCodecRegistry;
 	}
 
 	private synchronized <T> void init(Class<T> type, boolean isDeleted) {
+
+		String uri = System.getenv("MONGO_URL");
+		//String uri = "mongodb://admin:pass@192.168.39.159:30040";
+
+		MongoClient mongoClient = MongoClients.create(uri);
+		MongoDatabase database = mongoClient.getDatabase("data").withCodecRegistry(pojoCodecRegistry);
+
 		if (!isDeleted) {
 			if (type.equals(UserDAO.class))
 				currentCollection = database.getCollection(USERS_CONTAINER, UserDAO.class);
@@ -81,8 +82,8 @@ public class MongoDBLayer {
 
 	public <T> boolean delById(String id, String partKey, Class<T> type, boolean isFromDeleted) {
 		init(type, isFromDeleted);
-		
-		DeleteResult result = currentCollection.deleteOne(eq("id", id));
+
+		DeleteResult result = currentCollection.deleteOne(eq("_id", id));
 
 		return result.getDeletedCount() == 1;
 	}
@@ -98,7 +99,7 @@ public class MongoDBLayer {
 	public <T> T getById(String id, Class<T> type, boolean isFromDeleted) {
 		init(type, isFromDeleted);
 
-		T item = (T) currentCollection.find(eq("id", id)).first();
+		T item = (T) currentCollection.find(eq("_id", id)).first();
 
 		return item;
 	}
@@ -115,25 +116,15 @@ public class MongoDBLayer {
 	public <T> boolean patchAdd(String id, Class<T> type, String field, String change) {
 		init(type, false);
 
-		/*Document query = new Document().append("id", id);
-		Bson updates = Updates.combine(Updates.addToSet(field, change));
-		UpdateOptions options = new UpdateOptions().upsert(true);
-		UpdateResult result = collection.updateOne(query, updates, options);*/
-
-		T item = (T) currentCollection.findOneAndUpdate(eq("id", id), Updates.addToSet(field, change));
+		T item = (T) currentCollection.findOneAndUpdate(eq("_id", id), Updates.addToSet(field, change));
 
 		return item != null;
 	}
 
 	public <T> boolean patchRemove(String id, Class<T> type, String field, String change) {
 		init(type, false);
-		
-		/*Document query = new Document().append("id", id);
-		Bson updates = Updates.combine(Updates.pull(field, val));
-		UpdateOptions options = new UpdateOptions().upsert(true);
-		UpdateResult result = collection.updateOne(query, updates, options);*/
 
-		T item = (T) currentCollection.findOneAndUpdate(eq("id", id), Updates.pull(field, change));
+		T item = (T) currentCollection.findOneAndUpdate(eq("_id", id), Updates.pull(field, change));
 
 		return item != null;
 	}
@@ -142,9 +133,9 @@ public class MongoDBLayer {
 		init(MessageDAO.class, false);
 
 		List<MessageDAO> objs = new ArrayList<MessageDAO>();
-		currentCollection.find(eq("channelId", channelId)).sort(Sorts.descending("_ts")).skip(st).limit(len).into(objs);
-	
+		currentCollection.find(eq("channel", channelId)).sort(Sorts.descending("ts")).skip(st).limit(len).into(objs);
+
 		return objs;
-    }
+	}
 
 }

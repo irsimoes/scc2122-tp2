@@ -23,7 +23,8 @@ public class RedisCache {
 			return instance;
 		final JedisPoolConfig poolConfig = new JedisPoolConfig();
 
-        String redisHostname = "http://192.168.39.159:31380/";
+        String redisHostname = System.getenv("REDIS_HOSTNAME");
+		int redisPort = Integer.parseInt(System.getenv("REDIS_PORT"));
 
 		poolConfig.setMaxTotal(128);
 		poolConfig.setMaxIdle(128);
@@ -33,7 +34,7 @@ public class RedisCache {
 		poolConfig.setTestWhileIdle(true);
 		poolConfig.setNumTestsPerEvictionRun(3);
 		poolConfig.setBlockWhenExhausted(true);
-		instance = new JedisPool(poolConfig, redisHostname, 6380, 1000, true);
+		instance = new JedisPool(poolConfig, redisHostname, redisPort, 1000);
 		return instance;
 		
 	}
