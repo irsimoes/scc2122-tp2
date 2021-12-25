@@ -51,14 +51,16 @@ public class MongoDBLayer {
 	}
 
 	public MongoDBLayer(CodecRegistry pojoCodecRegistry) {
-		// gson = new Gson();
 		this.pojoCodecRegistry = pojoCodecRegistry;
 	}
 
 	private synchronized <T> void init(Class<T> type, boolean isDeleted) {
 
-		String uri = System.getenv("MONGO_URL");
-		//String uri = "mongodb://admin:pass@192.168.39.159:30040";
+		String mongoHost = System.getenv("MONGO_HOST");
+		String mongoPort = System.getenv("MONGO_PORT");
+		String mongoUser = System.getenv("MONGO_USER");
+		String mongoPassword = System.getenv("MONGO_PASSWORD");
+		String uri = String.format("mongodb://%s:%s@%s:%s", mongoUser, mongoPassword, mongoHost, mongoPort);
 
 		MongoClient mongoClient = MongoClients.create(uri);
 		MongoDatabase database = mongoClient.getDatabase("data").withCodecRegistry(pojoCodecRegistry);
