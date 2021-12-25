@@ -37,7 +37,6 @@ kind: Service
 metadata:
   name: mongodb-service
   namespace: database
-
 spec:
   selector:
     app: mongodb

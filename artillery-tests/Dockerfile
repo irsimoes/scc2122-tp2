@@ -1,17 +1,19 @@
 FROM node
 WORKDIR /home/artillery
-ADD images ~/artillery/images
-ADD create-channels.yml ~/artillery
-ADD create-messages.yml ~/artillery
-ADD create-users.yml ~/artillery
-ADD delete-channels.yml ~/artillery
-ADD delete-messages.yml ~/artillery
-ADD delete-users.yml ~/artillery
-ADD workload1.yml ~/artillery
-ADD workload2.yml ~/artillery
-ADD workload3.yml ~/artillery
+ADD images /home/artillery/images
+ADD test-utils.js /home/artillery
+ADD create-channels.yml /home/artillery
+ADD create-messages.yml /home/artillery
+ADD create-users.yml /home/artillery
+ADD delete-channels.yml /home/artillery
+ADD delete-messages.yml /home/artillery
+ADD delete-users.yml /home/artillery
+ADD workload1.yml /home/artillery
+ADD workload2.yml /home/artillery
+ADD workload3.yml /home/artillery
 RUN npm install artillery
 RUN npm install faker
 RUN npm install node-fetch -save
 RUN npm install https://github.com/preguica/artillery-plugin-metrics-by-endpoint.git
+CMD sleep 99999999
 #EXPOSE 8080

@@ -1,6 +1,6 @@
 
 config:
-  target: 'https://scc2122appwesteurope54939.azurewebsites.net/rest'
+  target: 'http://104.45.74.10:8080/scc2122-backend-1.0/rest'
 #  target: 'http://localhost:8080/scc2122-backend/rest'
   http:
     timeout: 10
