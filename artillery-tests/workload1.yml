@@ -13,9 +13,9 @@ config:
   - name: "Warm up"
     arrivalRate: 1         
     duration: 10
-#  - name: "Test"
-#    arrivalRate: 3         
-#    duration: 60
+  - name: "Test"
+    arrivalRate: 3         
+    duration: 60
 
 scenarios:
   - name: 'Passive reader'
