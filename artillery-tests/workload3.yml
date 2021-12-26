@@ -14,7 +14,7 @@
 # troca de nome antes
 
 config:
-  target: '${TARGET_URL}'
+  target: "{{ $processEnvironment.TARGET_URL }}"
   #  target: 'http://localhost:8080/scc2122-backend/rest'
   http:
     timeout: 10

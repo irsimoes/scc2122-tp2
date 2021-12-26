@@ -3,7 +3,7 @@
 /***
  * Exported functions to be used in the testing scripts.
  */
-export default {
+module.exports = {
 	uploadImageBody,
 	genNewUser,
 	genNewUserReply,
@@ -30,9 +30,9 @@ export default {
 	selectMessageFromMessageLst
 }
 
-import { name, internet, random as _random, lorem } from 'faker';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import { extname } from 'path';
+const Faker = require('faker')
+const fs = require('fs')
+const path = require('path')
 
 var imagesIds = []
 var images = []
@@ -94,27 +94,27 @@ function randomSkewed(val) {
 // Loads data about images from disk
 function loadData() {
 	var basedir
-	if (existsSync('/images'))
+	if (fs.existsSync('/images'))
 		basedir = '/images'
 	else
 		basedir = 'images'
-	readdirSync(basedir).forEach(file => {
-		if (extname(file) === ".jpeg") {
-			var img = readFileSync(basedir + "/" + file)
+	fs.readdirSync(basedir).forEach(file => {
+		if (path.extname(file) === ".jpeg") {
+			var img = fs.readFileSync(basedir + "/" + file)
 			images.push(img)
 		}
 	})
 	var str;
-	if (existsSync('users.data')) {
-		str = readFileSync('users.data', 'utf8')
+	if (fs.existsSync('users.data')) {
+		str = fs.readFileSync('users.data', 'utf8')
 		users = JSON.parse(str)
 	}
-	if (existsSync('channels.data')) {
-		str = readFileSync('channels.data', 'utf8')
+	if (fs.existsSync('channels.data')) {
+		str = fs.readFileSync('channels.data', 'utf8')
 		channels = JSON.parse(str)
 	}
-	if (existsSync('messages.data')) {
-		str = readFileSync('messages.data', 'utf8')
+	if (fs.existsSync('messages.data')) {
+		str = fs.readFileSync('messages.data', 'utf8')
 		messages = JSON.parse(str)
 	}
 }
@@ -157,11 +157,11 @@ function selectImageToDownload(context, events, done) {
  * Generate data for a new user using Faker
  */
 function genNewUser(context, events, done) {
-	const first = `${name.firstName()}`
-	const last = `${name.lastName()}`
+	const first = `${Faker.name.firstName()}`
+	const last = `${Faker.name.lastName()}`
 	context.vars.id = first + "." + last + "." + Date.now()
 	context.vars.name = first + " " + last
-	context.vars.pwd = `${internet.password()}`
+	context.vars.pwd = `${Faker.internet.password()}`
 	return done()
 }
 
@@ -173,7 +173,7 @@ function genNewUserReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let u = JSON.parse(response.body)
 		users.push(u)
-		writeFileSync('users.data', JSON.stringify(users));
+		fs.writeFileSync('users.data', JSON.stringify(users));
 	}
 	return next()
 }
@@ -186,7 +186,7 @@ function genNewChannelReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let c = JSON.parse(response.body)
 		channels.push(c)
-		writeFileSync('channels.data', JSON.stringify(channels));
+		fs.writeFileSync('channels.data', JSON.stringify(channels));
 	}
 	return next()
 }
@@ -201,7 +201,7 @@ function genNewMessageReply(requestParams, response, context, ee, next) {
 			"imageId": context.vars.imageId
 		}
 		messages.push(message);
-		writeFileSync('messages.data', JSON.stringify(messages));
+		fs.writeFileSync('messages.data', JSON.stringify(messages));
 	}
 	return next();
 }
@@ -213,7 +213,7 @@ function deleteUserReply(requestParams, response, context, ee, next) {
 		users = users.filter(function (currentValue, index, arr) {
 			return currentValue.id !== context.vars.user;
 		});
-		writeFileSync('users.data', JSON.stringify(users));
+		fs.writeFileSync('users.data', JSON.stringify(users));
 
 		//apagar os channels que sao desse user 
 		filterChannelsDelByUser(context.vars.user)
@@ -230,7 +230,7 @@ function filterChannelsDelByUser(userId) {
 		channels = channels.filter(function (currentValue, index, arr) {
 			return currentValue.owner !== userId;
 		});
-		writeFileSync('channels.data', JSON.stringify(channels));
+		fs.writeFileSync('channels.data', JSON.stringify(channels));
 	}
 }
 
@@ -239,7 +239,7 @@ function filterMessagesDelByUser(userId) {
 		messages = messages.filter(function (currentValue, index, arr) {
 			return currentValue.user !== userId;
 		});
-		writeFileSync('messages.data', JSON.stringify(messages));
+		fs.writeFileSync('messages.data', JSON.stringify(messages));
 	}
 }
 
@@ -248,13 +248,13 @@ function deleteChannelReply(requestParams, response, context, ee, next) {
 		channels = channels.filter(function (value, index, arr) {
 			return value.id != context.vars.channel;
 		});
-		writeFileSync('channels.data', JSON.stringify(channels));
+		fs.writeFileSync('channels.data', JSON.stringify(channels));
 
 		//apagar as mensagens
 		messages = messages.filter(function (currentValue, index, arr) {
 			return currentValue.channel !== context.vars.channel;
 		});
-		writeFileSync('messages.data', JSON.stringify(messages));
+		fs.writeFileSync('messages.data', JSON.stringify(messages));
 
 	}
 	return next()
@@ -265,7 +265,7 @@ function deleteMessageReply(requestParams, response, context, ee, next) {
 		messages = messages.filter(function (value, index, arr) {
 			return value.id != context.vars.id;
 		});
-		writeFileSync('messages.data', JSON.stringify(messages));
+		fs.writeFileSync('messages.data', JSON.stringify(messages));
 	}
 
 	return next();
@@ -341,7 +341,7 @@ function selectChannelSkewed(context, events, done) {
  * Generate data for a new channel
  */
 function genNewChannel(context, events, done) {
-	context.vars.channelName = `${_random.word()}`
+	context.vars.channelName = `${Faker.random.word()}`
 	context.vars.publicChannel = Math.random() < 0.2
 	return done()
 }
@@ -442,7 +442,7 @@ function selectChannelFromChannelLstSkewed(context, events, done) {
  * Generate data for a new message
  */
 function genNewMessage(context, events, done) {
-	context.vars.msgText = `${lorem.paragraph()}`
+	context.vars.msgText = `${Faker.lorem.paragraph()}`
 	if (Math.random() < 0.05) {
 		context.vars.hasImage = true
 	} else {

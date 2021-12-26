@@ -7,7 +7,7 @@
 
 
 config:
-  target: '${TARGET_URL}'
+  target: "{{ $processEnvironment.TARGET_URL }}"
   http:
     timeout: 10
   plugins:
