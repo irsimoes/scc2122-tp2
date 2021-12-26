@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongodb-deployment
-  namespace: database
   labels:
     app: mongodb
 spec:
@@ -31,12 +30,18 @@ spec:
             secretKeyRef:
               name: mongodb-secret
               key: mongo-root-password
+        resources:
+          requests:
+            cpu: 200m
+            memory: 400Mi
+          limits:
+            cpu: 1000m
+            memory: 1000Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: mongodb-service
-  namespace: database
 spec:
   selector:
     app: mongodb
