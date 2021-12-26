@@ -16,5 +16,5 @@ RUN npm install faker
 RUN npm install node-fetch -save
 RUN npm install https://github.com/preguica/artillery-plugin-metrics-by-endpoint.git
 #CMD sleep 99999999
-CMD ./node_modules/.bin/artillery run create-users.yml ; ./node_modules/.bin/artillery run --output workload1.json workload1.yml ; ./node_modules/.bin/artillery report --output workload1.html workload1.json
+CMD ./node_modules/.bin/artillery run create-users.yml ; ./node_modules/.bin/artillery run --output workload1.json workload1.yml ; ./node_modules/.bin/artillery report --output /aci/logs/workload1.html workload1.json
 #EXPOSE 8080
