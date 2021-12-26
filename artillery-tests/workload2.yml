@@ -9,7 +9,7 @@
 #fim do loop
 
 config:
-  target: "http://104.45.74.10:8080/scc2122-backend-1.0/rest"
+  target: '${TARGET_URL}'
   #  target: 'http://localhost:8080/scc2122-backend/rest'
   http:
     timeout: 10

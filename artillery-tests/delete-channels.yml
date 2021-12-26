@@ -7,7 +7,7 @@
 
 
 config:
-  target: 'http://104.45.74.10:8080/scc2122-backend-1.0/rest'
+  target: '${TARGET_URL}'
   http:
     timeout: 10
   plugins:
