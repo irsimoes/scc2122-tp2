@@ -33,7 +33,7 @@ config:
 
 scenarios:
   - name: "Angry friend" 
-    weight: 0     #60% chance of executing
+    weight: 6     #60% chance of executing
     flow:
       - function: "genNewUser" #vamos criar 3 users
       - post: # o user 1
