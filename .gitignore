@@ -7,3 +7,5 @@ trab-v2/target
 kubernetes/database/mongo-secret.yaml
 
 kubernetes/webapp/mongo-secret.yaml
+
+artillery-tests/node_modules/

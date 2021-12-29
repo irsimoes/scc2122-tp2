@@ -39,10 +39,8 @@ metadata:
   namespace: cache
 
 spec:
-  type: LoadBalancer #apagar isto
   ports:
   - port: 6379
     targetPort: 6379
-    nodePort: 31380 #apagar isto
   selector:
     app: redis
